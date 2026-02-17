@@ -4,9 +4,10 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 env:
-    PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.12'
 
 permissions:
   contents: write
@@ -24,6 +25,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
       - name: Install MinGW
         run: choco install mingw --yes --force
 
@@ -33,9 +37,8 @@ jobs:
           $mingwPath = "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin"
           echo "$mingwPath" >> $env:GITHUB_PATH
 
-      - name: Download PyInstaller source
-        run: |
-          git clone https://github.com/pyinstaller/pyinstaller.git
+      - name: Clone PyInstaller (latest)
+        run: git clone --depth 1 https://github.com/pyinstaller/pyinstaller.git
 
       - name: Compile PyInstaller bootloader
         run: |
@@ -44,14 +47,13 @@ jobs:
           python waf configure --gcc
           python waf all --target-arch=64bit
 
-      - name: Install PyInstaller (with compiled bootloader)
+      - name: Install PyInstaller (compiled bootloader)
         run: |
           cd PyInstaller
           pip install .
 
       - name: Install app dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Build executable
         run: |
@@ -65,8 +67,7 @@ jobs:
           name: ${{ github.ref_name }}
           generateReleaseNotes: true
           body: |
-            Made with PyInstaller. Python ${{ env.PYTHON_VERSION }} and custom-compiled bootloader (MinGW).
+            Built with PyInstaller.
+            Python ${{ env.PYTHON_VERSION }} and custom-compiled bootloader (MinGW).
 
-            **NOTE**
-            Run it as it is. If having issues run as administrator.
-            You can use this one or compile your own. Details on how to do that are given in the [README](https://github.com/invcble/NoMoreBorder?tab=readme-ov-file#or-option-2-run-as-a-script--compile-your-own-exe).
+            If you experience issues, try running as Administrator.
